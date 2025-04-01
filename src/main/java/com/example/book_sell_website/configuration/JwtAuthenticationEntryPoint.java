@@ -1,6 +1,5 @@
 package com.example.book_sell_website.configuration;
 
-//import com.example.book_sell_website.dto.base.response.ApiResponse;
 import com.example.book_sell_website.dto.base.response.ApiResponse;
 import com.example.book_sell_website.exception.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,12 +14,10 @@ import java.io.IOException;
 
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
-    public void commence(
-            HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
-            throws IOException, ServletException {
-
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+        //log ra console số 1
+        System.out.println("1");
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
-
         response.setStatus(errorCode.getStatusCode().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
@@ -32,9 +29,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 .build();
 
         ObjectMapper objectMapper = new ObjectMapper();
-
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
         response.flushBuffer();
-
     }
 }

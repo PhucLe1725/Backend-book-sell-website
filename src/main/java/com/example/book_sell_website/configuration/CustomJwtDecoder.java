@@ -15,7 +15,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Component;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.nimbusds.jose.JOSEException;
 
@@ -30,25 +31,29 @@ public class CustomJwtDecoder implements JwtDecoder {
 
     private NimbusJwtDecoder nimbusJwtDecoder = null;
 
+    private static final Logger logger = LoggerFactory.getLogger(CustomJwtDecoder.class);
+
     @Override
     public Jwt decode(String token) throws JwtException {
-
+        logger.info("Decoding token: {}", token);
         try {
-            var response = authenticationService.introspect(
-                    IntrospectRequest.builder().token(token).build());
-
-            if (!response.isValid()) throw new JwtException("Token invalid");
+            var response = authenticationService.introspect(IntrospectRequest.builder().token(token).build());
+            if (!response.isValid()) {
+                logger.error("Token invalid");
+                throw new JwtException("Token invalid");
+            }
         } catch (JOSEException | ParseException e) {
+            logger.error("Error decoding token: {}", e.getMessage());
             throw new JwtException(e.getMessage());
         }
 
         if (Objects.isNull(nimbusJwtDecoder)) {
             SecretKeySpec secretKeySpec = new SecretKeySpec(signerKey.getBytes(), "HS512");
-            nimbusJwtDecoder = NimbusJwtDecoder.withSecretKey(secretKeySpec)
-                    .macAlgorithm(MacAlgorithm.HS512)
-                    .build();
+            nimbusJwtDecoder = NimbusJwtDecoder.withSecretKey(secretKeySpec).macAlgorithm(MacAlgorithm.HS512).build();
         }
 
-        return nimbusJwtDecoder.decode(token);
+        Jwt decodedJwt = nimbusJwtDecoder.decode(token);
+        logger.info("Token decoded successfully: {}", decodedJwt);
+        return decodedJwt;
     }
 }

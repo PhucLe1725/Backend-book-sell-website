@@ -6,10 +6,8 @@ import com.example.book_sell_website.dto.Login_logout_register.logInDTO;
 import com.example.book_sell_website.dto.Login_logout_register.registerDTO;
 import com.example.book_sell_website.dto.Login_logout_register.registerResponseDTO;
 import com.example.book_sell_website.entity.User;
-import com.example.book_sell_website.entity.pendingUser;
 import com.example.book_sell_website.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -18,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-public class userController {
+public class UserController {
 
     @Autowired
     private UserService userService;
@@ -30,9 +28,8 @@ public class userController {
 //          "password" : "12345"
 //    }
     @GetMapping("/register")
-    public boolean register(@RequestBody registerDTO user)
-    {
-        if (!userService.isExistUser(user)){
+    public boolean register(@RequestBody registerDTO user) {
+        if (!userService.isExistUser(user)) {
             return true;
         }
         return false;

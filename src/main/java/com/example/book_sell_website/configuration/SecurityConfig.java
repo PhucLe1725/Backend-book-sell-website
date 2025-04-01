@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,41 +13,46 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
     private final String[] PUBLIC_ENDPOINTS = {
-            "/api/users/register", "/api/users/login", "/auth/Introspect", "/auth/Logout", "/auth/Refresh", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**", "/swagger-resources/**", "/webjars/**"
+            "/auth/Login", "/auth/Logout", "/api/users/register", "/api/users/login", "/auth/Introspect", "/auth/Logout", "/auth/Refresh", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**", "/swagger-resources/**", "/webjars/**"
     };
 
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
 
     @Autowired
-    @Lazy
     private CustomJwtDecoder customJwtDecoder;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(request -> request.requestMatchers(PUBLIC_ENDPOINTS)
-                .permitAll()
-                .anyRequest()
-                .authenticated());
+        logger.info("Configuring security filter chain");
 
-        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
-                .decoder(customJwtDecoder)
-                    .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+        httpSecurity.authorizeHttpRequests(request -> {
+            logger.info("Configuring public endpoints");
+            request.requestMatchers(PUBLIC_ENDPOINTS).permitAll();
+            request.anyRequest().authenticated();
+        });
 
+        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> {
+            logger.info("Configuring JWT decoder and authentication converter");
+            jwtConfigurer.decoder(customJwtDecoder);
+            jwtConfigurer.jwtAuthenticationConverter(jwtAuthenticationConverter());
+        }).authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
 
-        );
         httpSecurity.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration corsConfiguration = new CorsConfiguration();
             corsConfiguration.addAllowedOriginPattern("*");
             corsConfiguration.addAllowedMethod("*");
-            corsConfiguration.addAllowedHeader("*"); // Cho phép tất cả các header, bao gồm Authorization
+            corsConfiguration.addAllowedHeader("*");
             corsConfiguration.setAllowCredentials(true);
             return corsConfiguration;
         })).csrf(AbstractHttpConfigurer::disable);
@@ -72,5 +76,4 @@ public class SecurityConfig {
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }
